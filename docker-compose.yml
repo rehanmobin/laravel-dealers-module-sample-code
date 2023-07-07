@@ -1,0 +1,44 @@
+version: '3.7'
+networks:
+    carnomaly_natwork:
+        driver: bridge
+services:
+    db:
+        image: mysql:5.7
+        ports:
+            - "3306:3306"
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_ALLOW_EMPTY_PASSWORD: 1
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_USER: ${DB_USERNAME}
+        restart: unless-stopped
+        volumes:
+            - ./dev/docker/mysql:/docker-entrypoint-initdb.d
+        networks:
+            - carnomaly_natwork
+    app:
+        build: .
+        image: 'laravelapp'
+        ports:
+            - 8080:80
+            - 80:80
+        volumes:
+            - ./:/var/www/html
+        networks:
+            - carnomaly_natwork
+    redis:
+        image: redis
+        command: redis-server --requirepass password123
+        environment: { TERM: xterm }
+        restart: unless-stopped
+        networks:
+            - carnomaly_natwork
+    mailhog:
+      image: 'mailhog/mailhog:latest'
+      ports:
+        - '${FORWARD_MAILHOG_PORT:-1025}:1025'
+        - '${FORWARD_MAILHOG_DASHBOARD_PORT:-8025}:8025'
+      networks:
+        - carnomaly_natwork
